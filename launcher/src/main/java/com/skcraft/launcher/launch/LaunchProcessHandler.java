@@ -6,17 +6,18 @@
 
 package com.skcraft.launcher.launch;
 
-import com.google.common.base.Function;
-import com.skcraft.launcher.Launcher;
-import com.skcraft.launcher.dialog.LauncherFrame;
-import com.skcraft.launcher.dialog.ProcessConsoleFrame;
-import com.skcraft.launcher.swing.MessageLog;
-import lombok.NonNull;
-import lombok.extern.java.Log;
-
-import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
+
+import javax.swing.SwingUtilities;
+
+import com.google.common.base.Function;
+import com.skcraft.launcher.Launcher;
+import com.skcraft.launcher.dialog.ProcessConsoleFrame;
+import com.skcraft.launcher.swing.MessageLog;
+
+import lombok.NonNull;
+import lombok.extern.java.Log;
 
 /**
  * Handles post-process creation during launch.

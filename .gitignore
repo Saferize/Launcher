@@ -148,3 +148,13 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+launcher/assets/*
+launcher/instances/*
+launcher/libraries/*
+.modpacks
+_upload
+accounts.dat
+gradle.properties
+*.log
+*.jar
