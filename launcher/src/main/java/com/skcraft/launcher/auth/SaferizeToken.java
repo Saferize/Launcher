@@ -1,14 +1,15 @@
 package com.skcraft.launcher.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.skcraft.launcher.persistence.Scrambled;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Scrambled("SAFERIZE_TOKEN")
 public class SaferizeToken {
 		
 	private String parentEmail;
@@ -20,4 +21,20 @@ public class SaferizeToken {
 		setParentEmail(parentEmail);
 		setUserToken(userToken);
 	}
+
+
+
+	@Override
+	public boolean equals(Object obj) {
+		return super.equals(obj);
+	}
+
+
+
+	@Override
+	public int hashCode() {
+		return super.hashCode();
+	}
+	
+	
 }

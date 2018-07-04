@@ -36,6 +36,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
+import org.eclipse.swt.internal.theme.ProgressBarDrawData;
+
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -325,6 +327,7 @@ public class LoginDialog extends JDialog {
                 Persistence.commitAndForget(accounts);
 
                 attemptLogin(parentEmail, account, password);
+                //attemptSaferize(parentEmail, "test", new OfflineSession(launcher.getProperties().getProperty("offlinePlayerName")));
             }
         } else {
             SwingHelper.showErrorDialog(this, SharedLocale.tr("login.noLoginError"), SharedLocale.tr("login.noLoginTitle"));
@@ -340,7 +343,7 @@ public class LoginDialog extends JDialog {
             @Override
             public void onSuccess(Session result) {            	
                // setResult(result);
-            	attemptSaferize(parentEmail, result.getClientToken(), result);
+            	attemptSaferize(parentEmail, result.getUuid(), result);
             }
 
             @Override
@@ -353,6 +356,7 @@ public class LoginDialog extends JDialog {
     }
     
     private void attemptSaferize(String parentEmail, String userToken, Session session) {
+    	
         SaferizeCallable callable = new SaferizeCallable(parentEmail, userToken);        
         
         ObservableFuture<SaferizeToken> future = new ObservableFuture<SaferizeToken>(launcher.getExecutor().submit(callable), callable);
@@ -366,9 +370,8 @@ public class LoginDialog extends JDialog {
             @Override
             public void onFailure(Throwable t) {
             }
-        }, SwingExecutor.INSTANCE);
-
-        ProgressDialog.showProgress(this, future, SharedLocale.tr("login.loggingInTitle"), SharedLocale.tr("login.loggingInStatus"));
+        }, SwingExecutor.INSTANCE);        
+        ProgressDialog.showProgress(this, future, SharedLocale.tr("login.saferizeCreating"), SharedLocale.tr("login.saferizeCreatingStatus"));
         SwingHelper.addErrorDialogCallback(this, future);
     }
 
