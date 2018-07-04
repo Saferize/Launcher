@@ -38,6 +38,10 @@ public class Configuration {
     private boolean serverEnabled = false;
     private String serverHost;
     private int serverPort = 25565;
+    private String saferizeUrl = "https://api.saferize.com";
+    private String saferizeWebsocketUrl = "wss://websocket.saferize.com/usage";
+    private String saferizeAccessKey;
+    private String saferizePrivateKey;
 
     @Override
     public boolean equals(Object o) {

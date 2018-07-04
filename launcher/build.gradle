@@ -6,6 +6,10 @@ jar {
     }
 }
 
+repositories {
+	mavenLocal();
+}
+
 dependencies {
     compile 'org.projectlombok:lombok:1.12.2'
     compile 'javax.xml.bind:jaxb-api:2.2.4'
@@ -16,6 +20,9 @@ dependencies {
     compile 'com.beust:jcommander:1.32'
     compile 'com.miglayout:miglayout:3.7.4'
     compile 'com.google.code.findbugs:jsr305:3.0.0'
+    compile 'org.java.net.substance:substance:6.0'
+    compile 'com.saferize:saferize-java-sdk:1.0-SNAPSHOT'
+    
 }
 
 processResources {

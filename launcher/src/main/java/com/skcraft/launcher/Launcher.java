@@ -6,32 +6,9 @@
 
 package com.skcraft.launcher;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
-import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.skcraft.launcher.auth.AccountList;
-import com.skcraft.launcher.auth.LoginService;
-import com.skcraft.launcher.auth.YggdrasilLoginService;
-import com.skcraft.launcher.launch.LaunchSupervisor;
-import com.skcraft.launcher.model.minecraft.VersionManifest;
-import com.skcraft.launcher.persistence.Persistence;
-import com.skcraft.launcher.swing.SwingHelper;
-import com.skcraft.launcher.update.UpdateManager;
-import com.skcraft.launcher.util.HttpRequest;
-import com.skcraft.launcher.util.SharedLocale;
-import com.skcraft.launcher.util.SimpleLogFormatter;
-import com.sun.management.OperatingSystemMXBean;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.extern.java.Log;
-import org.apache.commons.io.FileUtils;
+import static com.skcraft.launcher.util.SharedLocale.*;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Window;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -44,7 +21,35 @@ import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
-import static com.skcraft.launcher.util.SharedLocale.tr;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import org.apache.commons.io.FileUtils;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+import com.google.common.base.Strings;
+import com.google.common.base.Supplier;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.skcraft.launcher.auth.AccountList;
+import com.skcraft.launcher.auth.LoginService;
+import com.skcraft.launcher.auth.SaferizeToken;
+import com.skcraft.launcher.auth.YggdrasilLoginService;
+import com.skcraft.launcher.launch.LaunchSupervisor;
+import com.skcraft.launcher.model.minecraft.VersionManifest;
+import com.skcraft.launcher.persistence.Persistence;
+import com.skcraft.launcher.swing.SwingHelper;
+import com.skcraft.launcher.update.UpdateManager;
+import com.skcraft.launcher.util.HttpRequest;
+import com.skcraft.launcher.util.SharedLocale;
+import com.skcraft.launcher.util.SimpleLogFormatter;
+import com.sun.management.OperatingSystemMXBean;
+
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.extern.java.Log;
 
 /**
  * The main entry point for the launcher.
@@ -63,6 +68,7 @@ public final class Launcher {
     @Getter private final Configuration config;
     @Getter private final AccountList accounts;
     @Getter private final AssetsRoot assets;
+    @Getter private final SaferizeToken saferizeToken;
     @Getter private final LaunchSupervisor launchSupervisor = new LaunchSupervisor(this);
     @Getter private final UpdateManager updateManager = new UpdateManager(this);
     @Getter private final InstanceTasks instanceTasks = new InstanceTasks(this);
@@ -93,8 +99,9 @@ public final class Launcher {
         this.instances = new InstanceList(this);
         this.assets = new AssetsRoot(new File(baseDir, "assets"));
         this.config = Persistence.load(new File(configDir, "config.json"), Configuration.class);
-        this.accounts = Persistence.load(new File(configDir, "accounts.dat"), AccountList.class);
-
+        this.accounts = Persistence.load(new File(configDir, "accounts.dat"), AccountList.class);        
+        this.saferizeToken = Persistence.load(new File(configDir, "saferize.dat"), SaferizeToken.class);
+        
         setDefaultConfig();
 
         if (accounts.getSize() > 0) {

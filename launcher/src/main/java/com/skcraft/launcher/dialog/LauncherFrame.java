@@ -85,7 +85,7 @@ public class LauncherFrame extends JFrame {
 
     private void initComponents() {
         JPanel container = createContainerPanel();
-        container.setLayout(new MigLayout("fill, insets dialog", "[][]push[][]", "[grow][]"));
+        container.setLayout(new MigLayout("fill, insets dialog", "[center]", "[grow][]"));
 
         webView = createNewsPanel();
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, instanceScroll, webView);
@@ -103,17 +103,24 @@ public class LauncherFrame extends JFrame {
 
         updateCheck.setSelected(true);
         instancesTable.setModel(instancesModel);
-        launchButton.setFont(launchButton.getFont().deriveFont(Font.BOLD));
+        launchButton.setFont(launchButton.getFont().deriveFont(Font.BOLD, 20)); 
+        
+        launchButton.setForeground(Color.WHITE);
+        launchButton.setBackground(new Color(54, 176, 47));  
+        launchButton.setContentAreaFilled(false);
+        launchButton.setOpaque(true);
         splitPane.setDividerLocation(200);
         splitPane.setDividerSize(4);
         splitPane.setOpaque(false);
-        container.add(splitPane, "grow, wrap, span 5, gapbottom unrel, w null:680, h null:350");
-        SwingHelper.flattenJSplitPane(splitPane);
-        container.add(refreshButton);
-        container.add(updateCheck);
-        container.add(selfUpdateButton);
-        container.add(optionsButton);
-        container.add(launchButton);
+        container.setBackground(Color.BLACK);
+        container.add(webView, "grow, wrap, gapbottom unrel, w null:680, h null:350");
+        //container.add(splitPane, "grow, wrap, span 5, gapbottom unrel, w null:680, h null:350");
+        //SwingHelper.flattenJSplitPane(splitPane);
+        //container.add(refreshButton);
+        //container.add(updateCheck);
+        //container.add(selfUpdateButton);
+        //container.add(optionsButton);
+        container.add(launchButton, "w 200, h 60" );
 
         add(container, BorderLayout.CENTER);
 
@@ -355,7 +362,7 @@ public class LauncherFrame extends JFrame {
         LaunchOptions options = new LaunchOptions.Builder()
                 .setInstance(instance)
                 .setListener(new LaunchListenerImpl(this))
-                .setUpdatePolicy(permitUpdate ? UpdatePolicy.UPDATE_IF_SESSION_ONLINE : UpdatePolicy.NO_UPDATE)
+                .setUpdatePolicy(permitUpdate ? UpdatePolicy.UPDATE_IF_SESSION_ONLINE : UpdatePolicy.NO_UPDATE)                
                 .setWindow(this)
                 .build();
         launcher.getLaunchSupervisor().launch(options);

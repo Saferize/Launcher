@@ -6,28 +6,66 @@
 
 package com.skcraft.launcher.dialog;
 
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPasswordField;
+import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
+import javax.swing.WindowConstants;
+
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.saferize.sdk.Approval;
+import com.saferize.sdk.Approval.Status;
+import com.saferize.sdk.SaferizeClient;
 import com.skcraft.concurrency.ObservableFuture;
 import com.skcraft.concurrency.ProgressObservable;
 import com.skcraft.launcher.Configuration;
 import com.skcraft.launcher.Launcher;
-import com.skcraft.launcher.auth.*;
-import com.skcraft.launcher.swing.*;
+import com.skcraft.launcher.auth.Account;
+import com.skcraft.launcher.auth.AccountList;
+import com.skcraft.launcher.auth.AuthenticationException;
+import com.skcraft.launcher.auth.LoginService;
+import com.skcraft.launcher.auth.OfflineSession;
+import com.skcraft.launcher.auth.SaferizeToken;
+import com.skcraft.launcher.auth.Session;
 import com.skcraft.launcher.persistence.Persistence;
+import com.skcraft.launcher.swing.ActionListeners;
+import com.skcraft.launcher.swing.FormPanel;
+import com.skcraft.launcher.swing.LinedBoxPanel;
+import com.skcraft.launcher.swing.LinkButton;
+import com.skcraft.launcher.swing.PopupMouseAdapter;
+import com.skcraft.launcher.swing.SwingHelper;
+import com.skcraft.launcher.swing.TextFieldPopupMenu;
 import com.skcraft.launcher.util.SharedLocale;
 import com.skcraft.launcher.util.SwingExecutor;
+
 import lombok.Getter;
 import lombok.NonNull;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * The login dialog.
@@ -40,6 +78,7 @@ public class LoginDialog extends JDialog {
 
     private final JComboBox idCombo = new JComboBox();
     private final JPasswordField passwordText = new JPasswordField();
+    private final JTextField idParentEmail = new JTextField();
     private final JCheckBox rememberIdCheck = new JCheckBox(SharedLocale.tr("login.rememberId"));
     private final JCheckBox rememberPassCheck = new JCheckBox(SharedLocale.tr("login.rememberPassword"));
     private final JButton loginButton = new JButton(SharedLocale.tr("login.login"));
@@ -93,13 +132,23 @@ public class LoginDialog extends JDialog {
         rememberPassCheck.setBorder(BorderFactory.createEmptyBorder());
         idCombo.setEditable(true);
         idCombo.getEditor().selectAll();
+        
 
         loginButton.setFont(loginButton.getFont().deriveFont(Font.BOLD));
 
+        formPanel.addRow(new JLabel(SharedLocale.tr("login.parentEmail")), idParentEmail);
+        if (launcher.getSaferizeToken() != null && launcher.getSaferizeToken().getParentEmail() != null) {
+        	idParentEmail.setText(launcher.getSaferizeToken().getParentEmail());
+        	if (launcher.getSaferizeToken().getUserToken() != null) {
+        		idParentEmail.setEnabled(false);
+        	}
+        }
+        
         formPanel.addRow(new JLabel(SharedLocale.tr("login.idEmail")), idCombo);
         formPanel.addRow(new JLabel(SharedLocale.tr("login.password")), passwordText);
         formPanel.addRow(new JLabel(), rememberIdCheck);
         formPanel.addRow(new JLabel(), rememberPassCheck);
+        
         buttonsPanel.setBorder(BorderFactory.createEmptyBorder(26, 13, 13, 13));
 
         if (launcher.getConfig().isOfflineEnabled()) {
@@ -254,6 +303,7 @@ public class LoginDialog extends JDialog {
         if (selected != null && selected instanceof Account) {
             Account account = (Account) selected;
             String password = passwordText.getText();
+            String parentEmail = idParentEmail.getText();
 
             if (password == null || password.isEmpty()) {
                 SwingHelper.showErrorDialog(this, SharedLocale.tr("login.noPasswordError"), SharedLocale.tr("login.noPasswordTitle"));
@@ -274,22 +324,43 @@ public class LoginDialog extends JDialog {
 
                 Persistence.commitAndForget(accounts);
 
-                attemptLogin(account, password);
+                attemptLogin(parentEmail, account, password);
             }
         } else {
             SwingHelper.showErrorDialog(this, SharedLocale.tr("login.noLoginError"), SharedLocale.tr("login.noLoginTitle"));
         }
     }
 
-    private void attemptLogin(Account account, String password) {
-        LoginCallable callable = new LoginCallable(account, password);
-        ObservableFuture<Session> future = new ObservableFuture<Session>(
-                launcher.getExecutor().submit(callable), callable);
-
+    private void attemptLogin(String parentEmail, Account account, String password) {
+        LoginCallable callable = new LoginCallable(account, password);        
+        
+        ObservableFuture<Session> future = new ObservableFuture<Session>(launcher.getExecutor().submit(callable), callable);
+        
         Futures.addCallback(future, new FutureCallback<Session>() {
             @Override
-            public void onSuccess(Session result) {
-                setResult(result);
+            public void onSuccess(Session result) {            	
+               // setResult(result);
+            	attemptSaferize(parentEmail, result.getClientToken(), result);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        }, SwingExecutor.INSTANCE);
+
+        ProgressDialog.showProgress(this, future, SharedLocale.tr("login.loggingInTitle"), SharedLocale.tr("login.loggingInStatus"));
+        SwingHelper.addErrorDialogCallback(this, future);
+    }
+    
+    private void attemptSaferize(String parentEmail, String userToken, Session session) {
+        SaferizeCallable callable = new SaferizeCallable(parentEmail, userToken);        
+        
+        ObservableFuture<SaferizeToken> future = new ObservableFuture<SaferizeToken>(launcher.getExecutor().submit(callable), callable);
+        
+        Futures.addCallback(future, new FutureCallback<SaferizeToken>() {
+            @Override
+            public void onSuccess(SaferizeToken result) {            	
+               setResult(session);            	
             }
 
             @Override
@@ -353,6 +424,44 @@ public class LoginDialog extends JDialog {
         public String getStatus() {
             return SharedLocale.tr("login.loggingInStatus");
         }
+    }
+    
+    private class SaferizeCallable implements Callable<SaferizeToken>,ProgressObservable {
+
+    	private String parentEmail;
+    	private String userToken;
+    	
+    	public SaferizeCallable(String parentEmail, String userToken) {
+			this.parentEmail = parentEmail;
+			this.userToken = userToken;
+		}
+    	
+		@Override
+		public double getProgress() {
+			return -1;
+		}
+
+		@Override
+		public String getStatus() {
+			return SharedLocale.tr("login.loggingInStatus");
+		}
+
+		@Override
+		public SaferizeToken call() throws Exception {
+			Configuration config = launcher.getConfig();
+			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(config.getSaferizeUrl()), new URI(config.getSaferizeWebsocketUrl()), config.getSaferizeAccessKey(), config.getSaferizePrivateKey()); 
+			SaferizeClient saferizeClient = new SaferizeClient(saferizeConfig);
+			Approval approval = saferizeClient.signUp(parentEmail, userToken);
+			if (approval.getStatus() == Status.REJECTED) {
+				throw new AuthenticationException("Parental Control is Rejected", SharedLocale.tr("login.parentalControlRejectedError"));
+			}
+			SaferizeToken token = launcher.getSaferizeToken();
+			token.setParentEmail(parentEmail);
+			token.setUserToken(userToken);
+			Persistence.commitAndForget(token);
+			return token;
+		}
+    	
     }
 
 }
