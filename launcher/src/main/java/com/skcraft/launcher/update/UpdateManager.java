@@ -78,7 +78,6 @@ public class UpdateManager {
             Futures.addCallback(future, new FutureCallback<File>() {
                 @Override
                 public void onSuccess(File result) {
-                    propertySupport.firePropertyChange("pendingUpdate", true, false);
                     UpdateManager.this.pendingUpdateUrl = null;
 
                     SwingHelper.showMessageDialog(
@@ -101,9 +100,10 @@ public class UpdateManager {
         }
     }
 
-    private void requestUpdate(URL url) {
-        propertySupport.firePropertyChange("pendingUpdate", getPendingUpdate(), url != null);
-        this.pendingUpdateUrl = url;
+    private void requestUpdate(URL url) {    	
+    	
+    	this.pendingUpdateUrl = url;
+    	propertySupport.firePropertyChange("pendingUpdate", getPendingUpdate(), false);    	
     }
 
 

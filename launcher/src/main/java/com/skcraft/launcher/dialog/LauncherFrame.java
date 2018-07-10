@@ -1,5 +1,5 @@
 /*
- * SK's Minecraft Launcher
+* SK's Minecraft Launcher
  * Copyright (C) 2010-2014 Albert Pham <http://www.sk89q.com> and contributors
  * Please see LICENSE.txt for license information.
  */
@@ -89,14 +89,17 @@ public class LauncherFrame extends JFrame {
 
         webView = createNewsPanel();
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, instanceScroll, webView);
-        selfUpdateButton.setVisible(launcher.getUpdateManager().getPendingUpdate());
+        //selfUpdateButton.setVisible(launcher.getUpdateManager().getPendingUpdate());
+        if (launcher.getUpdateManager().getPendingUpdate()) {
+        	launcher.getUpdateManager().performUpdate(LauncherFrame.this);
+        }
 
         launcher.getUpdateManager().addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 if (evt.getPropertyName().equals("pendingUpdate")) {
-                    selfUpdateButton.setVisible((Boolean) evt.getNewValue());
-
+                    //selfUpdateButton.setVisible((Boolean) evt.getNewValue());
+                	launcher.getUpdateManager().performUpdate(LauncherFrame.this);                	
                 }
             }
         });

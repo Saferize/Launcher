@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import javax.swing.BorderFactory;
@@ -35,8 +36,6 @@ import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
-
-import org.eclipse.swt.internal.theme.ProgressBarDrawData;
 
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
@@ -451,8 +450,8 @@ public class LoginDialog extends JDialog {
 
 		@Override
 		public SaferizeToken call() throws Exception {
-			Configuration config = launcher.getConfig();
-			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(config.getSaferizeUrl()), new URI(config.getSaferizeWebsocketUrl()), config.getSaferizeAccessKey(), config.getSaferizePrivateKey()); 
+			Properties prop = launcher.getProperties();
+			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(prop.getProperty("saferizeUrl")), new URI(prop.getProperty("saferizeWebsocketUrl")), prop.getProperty("saferizeAccessKey"), prop.getProperty("saferizePrivateKey")); 
 			SaferizeClient saferizeClient = new SaferizeClient(saferizeConfig);
 			Approval approval = saferizeClient.signUp(parentEmail, userToken);
 			if (approval.getStatus() == Status.REJECTED) {

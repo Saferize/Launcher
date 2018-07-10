@@ -9,7 +9,14 @@ jar {
 dependencies {
     compile 'org.projectlombok:lombok:1.12.2'
     compile 'com.googlecode.json-simple:json-simple:1.1.1'
+    //compile 'javax.xml.bind:jaxb-api:+'
 }
+
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 
 processResources {
     filesMatching('**/*.properties') {
@@ -24,5 +31,6 @@ shadowJar {
         exclude(dependency('org.projectlombok:lombok'))
     }
 }
+
 
 build.dependsOn(shadowJar)
