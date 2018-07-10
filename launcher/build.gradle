@@ -37,6 +37,7 @@ shadowJar {
     dependencies {
         exclude(dependency('org.projectlombok:lombok'))
     }
+    archiveName = "minecraft-launcher.jar"
 }
 
 build.dependsOn(shadowJar)

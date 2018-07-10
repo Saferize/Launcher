@@ -30,6 +30,7 @@ shadowJar {
     dependencies {
         exclude(dependency('org.projectlombok:lombok'))
     }
+    archiveName = "launcher-bootstrap.jar"
 }
 
 
