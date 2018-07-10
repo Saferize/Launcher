@@ -157,4 +157,3 @@ _upload
 accounts.dat
 gradle.properties
 *.log
-*.jar
