@@ -30,7 +30,7 @@ shadowJar {
     dependencies {
         exclude(dependency('org.projectlombok:lombok'))
     }
-    archiveName = "launcher-bootstrap.jar"
+    archiveName = "minecraft-bootstrap.jar"
 }
 
 
