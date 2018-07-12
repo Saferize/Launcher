@@ -6,16 +6,22 @@
 
 package com.skcraft.launcher.launch;
 
-import com.skcraft.launcher.util.Environment;
-import com.skcraft.launcher.util.Platform;
-import com.skcraft.launcher.util.WinRegistry;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
+import com.skcraft.launcher.util.Environment;
+import com.skcraft.launcher.util.Platform;
+import com.skcraft.launcher.util.WinRegistry;
+import static org.apache.commons.io.filefilter.FileFilterUtils.*;
 
 /**
  * Finds the best Java runtime to use.
@@ -30,9 +36,10 @@ public final class JavaRuntimeFinder {
      *
      * @return the JVM location, or null
      */
-    public static File findBestJavaPath() {
-        if (Environment.getInstance().getPlatform() != Platform.WINDOWS) {
-            return null;
+    public static File findBestJavaPath(File pathToSearch) {
+    	File jvm = tryFindingJVMonSubFolders(pathToSearch);
+        if (jvm != null) {
+            return jvm;
         }
         
         List<JREEntry> entries = new ArrayList<JREEntry>();
@@ -48,6 +55,14 @@ public final class JavaRuntimeFinder {
         }
         
         return null;
+    }
+    
+    private static File tryFindingJVMonSubFolders(File pathToSearch) {
+    	File path = new File(".");
+    	Collection<?> files = FileUtils.listFiles(path, orFileFilter(nameFileFilter("java"), nameFileFilter("java.exe")) , TrueFileFilter.INSTANCE);
+    	if (files == null || files.isEmpty()) return null;
+    	File java = (File) files.iterator().next();
+    	return java.getParentFile();
     }
     
     private static void getEntriesFromRegistry(List<JREEntry> entries, String basePath)

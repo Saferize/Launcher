@@ -72,6 +72,7 @@ public final class Launcher {
     @Getter private final LaunchSupervisor launchSupervisor = new LaunchSupervisor(this);
     @Getter private final UpdateManager updateManager = new UpdateManager(this);
     @Getter private final InstanceTasks instanceTasks = new InstanceTasks(this);
+    @Getter @Setter private File bootstrapDir;
 
     /**
      * Create a new launcher instance with the given base directory.
@@ -403,8 +404,11 @@ public final class Launcher {
             log.info("Using current directory " + dir.getAbsolutePath());
         }
 
-        return new Launcher(dir);
+        Launcher launcher =  new Launcher(dir);
+        launcher.setBootstrapDir(options.getBootstrapDir());
+        return launcher;
     }
+    
 
     /**
      * Setup loggers and perform initialization.

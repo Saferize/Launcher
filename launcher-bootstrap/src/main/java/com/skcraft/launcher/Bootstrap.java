@@ -151,13 +151,17 @@ public class Bootstrap {
                     "--portable",
                     "--dir",
                     baseDir.getAbsolutePath(),
+                    "--bootstrap-dir", 
+                    new File(".").getAbsolutePath(),
                     "--bootstrap-version",
                     String.valueOf(BOOTSTRAP_VERSION) };
         } else {
             launcherArgs = new String[] {
                     "--dir",
                     baseDir.getAbsolutePath(),
-                    "--bootstrap-version",
+                    "--bootstrap-dir", 
+                    new File(".").getAbsolutePath(),                    
+                    "--bootstrap-version",                    
                     String.valueOf(BOOTSTRAP_VERSION)  };
         }
 

@@ -152,10 +152,10 @@ public class LoginDialog extends JDialog {
         
         buttonsPanel.setBorder(BorderFactory.createEmptyBorder(26, 13, 13, 13));
 
-        if (launcher.getConfig().isOfflineEnabled()) {
-            buttonsPanel.addElement(offlineButton);
-            buttonsPanel.addElement(Box.createHorizontalStrut(2));
-        }
+//        if (launcher.getConfig().isOfflineEnabled()) {
+//            buttonsPanel.addElement(offlineButton);
+//            buttonsPanel.addElement(Box.createHorizontalStrut(2));
+//        }
         buttonsPanel.addElement(recoverButton);
         buttonsPanel.addGlue();
         buttonsPanel.addElement(loginButton);
