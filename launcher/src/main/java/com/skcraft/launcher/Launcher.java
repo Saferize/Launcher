@@ -102,7 +102,10 @@ public final class Launcher {
         this.config = Persistence.load(new File(configDir, "config.json"), Configuration.class);
         this.accounts = Persistence.load(new File(configDir, "accounts.dat"), AccountList.class);        
         this.saferizeToken = Persistence.load(new File(configDir, "saferize.dat"), SaferizeToken.class);
-        this.config.setJvmPath(arguments.getJvmPath());
+        if (arguments != null && arguments.getJvmPath() != null && !arguments.getJvmPath().isEmpty()) {
+        	this.config.setJvmPath(arguments.getJvmPath().replaceAll("\\\\", "/"));	
+        }
+        
         
         setDefaultConfig();
 

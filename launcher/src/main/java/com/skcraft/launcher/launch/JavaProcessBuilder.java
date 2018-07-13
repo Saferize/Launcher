@@ -39,7 +39,7 @@ public class JavaProcessBuilder {
     
 
     public void tryJvmPath(File path) throws IOException {
-        // Try the parent directory
+        // Try the parent directory    	
         if (!path.exists()) {
             throw new IOException(
                     "The configured Java runtime path '" + path + "' doesn't exist.");
