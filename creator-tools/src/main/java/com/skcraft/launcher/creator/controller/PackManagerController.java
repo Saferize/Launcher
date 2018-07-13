@@ -16,6 +16,7 @@ import com.skcraft.concurrency.Deferreds;
 import com.skcraft.concurrency.SettableProgress;
 import com.skcraft.launcher.InstanceList;
 import com.skcraft.launcher.Launcher;
+import com.skcraft.launcher.LauncherArguments;
 import com.skcraft.launcher.auth.OfflineSession;
 import com.skcraft.launcher.auth.Session;
 import com.skcraft.launcher.builder.BuilderConfig;
@@ -94,7 +95,7 @@ public class PackManagerController {
         launcherConfigDir.mkdirs();
         webRoot.mkdirs();
 
-        this.launcher = new Launcher(launcherDir, launcherConfigDir);
+        this.launcher = new Launcher(launcherDir, launcherConfigDir, new LauncherArguments());
         this.executor = launcher.getExecutor();
         this.frame = frame;
 
