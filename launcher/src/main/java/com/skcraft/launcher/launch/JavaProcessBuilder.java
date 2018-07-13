@@ -27,7 +27,7 @@ public class JavaProcessBuilder {
 
     private static final Pattern argsPattern = Pattern.compile("(?:([^\"]\\S*)|\"(.+?)\")\\s*");
 
-    private File jvmPath;
+    private File jvmPath = JavaRuntimeFinder.findBestJavaPath();
     @Getter @Setter private int minMemory;
     @Getter @Setter private int maxMemory;
     @Getter @Setter private int permGen;
@@ -37,9 +37,6 @@ public class JavaProcessBuilder {
     @Getter private final List<String> args = new ArrayList<String>();
     @Getter @Setter private String mainClass;
     
-    public JavaProcessBuilder(File pathToSearch) {
-    	 jvmPath = JavaRuntimeFinder.findBestJavaPath(pathToSearch);
-    }
 
     public void tryJvmPath(File path) throws IOException {
         // Try the parent directory

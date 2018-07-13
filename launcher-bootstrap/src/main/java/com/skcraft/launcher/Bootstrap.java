@@ -38,6 +38,7 @@ public class Bootstrap {
 
     public static void main(String[] args) throws Throwable {
         SimpleLogFormatter.configureGlobalLogger();
+        
         SharedLocale.loadBundle("com.skcraft.launcher.lang.Bootstrap", Locale.getDefault());
 
         boolean portable = isPortableMode();
@@ -150,17 +151,13 @@ public class Bootstrap {
             launcherArgs = new String[] {
                     "--portable",
                     "--dir",
-                    baseDir.getAbsolutePath(),
-                    "--bootstrap-dir", 
-                    new File(".").getAbsolutePath(),
+                    baseDir.getAbsolutePath(),                   
                     "--bootstrap-version",
                     String.valueOf(BOOTSTRAP_VERSION) };
         } else {
             launcherArgs = new String[] {
                     "--dir",
                     baseDir.getAbsolutePath(),
-                    "--bootstrap-dir", 
-                    new File(".").getAbsolutePath(),                    
                     "--bootstrap-version",                    
                     String.valueOf(BOOTSTRAP_VERSION)  };
         }

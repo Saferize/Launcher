@@ -25,8 +25,8 @@ public class LauncherArguments {
 
     @Parameter(names = "--portable")
     private boolean portable;
-    
-    @Parameter(names = "--bootstrap-dir")
-    private File bootstrapDir;
+
+    @Parameter(names = "--jvmPath")
+    private String jvmPath;
 
 }

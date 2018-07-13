@@ -36,6 +36,7 @@ import com.skcraft.launcher.auth.AccountList;
 import com.skcraft.launcher.auth.LoginService;
 import com.skcraft.launcher.auth.SaferizeToken;
 import com.skcraft.launcher.auth.YggdrasilLoginService;
+import com.skcraft.launcher.launch.LaunchOptions;
 import com.skcraft.launcher.launch.LaunchSupervisor;
 import com.skcraft.launcher.model.minecraft.VersionManifest;
 import com.skcraft.launcher.persistence.Persistence;
@@ -72,7 +73,6 @@ public final class Launcher {
     @Getter private final LaunchSupervisor launchSupervisor = new LaunchSupervisor(this);
     @Getter private final UpdateManager updateManager = new UpdateManager(this);
     @Getter private final InstanceTasks instanceTasks = new InstanceTasks(this);
-    @Getter @Setter private File bootstrapDir;
 
     /**
      * Create a new launcher instance with the given base directory.
@@ -80,8 +80,8 @@ public final class Launcher {
      * @param baseDir the base directory
      * @throws java.io.IOException on load error
      */
-    public Launcher(@NonNull File baseDir) throws IOException {
-        this(baseDir, baseDir);
+    public Launcher(@NonNull File baseDir, LauncherArguments arguments) throws IOException {
+        this(baseDir, baseDir, arguments);
     }
 
     /**
@@ -92,7 +92,7 @@ public final class Launcher {
      * @param configDir the config directory
      * @throws java.io.IOException on load error
      */
-    public Launcher(@NonNull File baseDir, @NonNull File configDir) throws IOException {
+    public Launcher(@NonNull File baseDir, @NonNull File configDir, LauncherArguments arguments) throws IOException {
         SharedLocale.loadBundle("com.skcraft.launcher.lang.Launcher", Locale.getDefault());
 
         this.baseDir = baseDir;
@@ -102,6 +102,7 @@ public final class Launcher {
         this.config = Persistence.load(new File(configDir, "config.json"), Configuration.class);
         this.accounts = Persistence.load(new File(configDir, "accounts.dat"), AccountList.class);        
         this.saferizeToken = Persistence.load(new File(configDir, "saferize.dat"), SaferizeToken.class);
+        this.config.setJvmPath(arguments.getJvmPath());
         
         setDefaultConfig();
 
@@ -404,8 +405,7 @@ public final class Launcher {
             log.info("Using current directory " + dir.getAbsolutePath());
         }
 
-        Launcher launcher =  new Launcher(dir);
-        launcher.setBootstrapDir(options.getBootstrapDir());
+        Launcher launcher =  new Launcher(dir, options);
         return launcher;
     }
     
