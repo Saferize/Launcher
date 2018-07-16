@@ -28,7 +28,6 @@ import javax.swing.JFileChooser;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileSystemView;
 
-import org.apache.commons.text.StringEscapeUtils;
 
 import com.skcraft.launcher.bootstrap.BootstrapUtils;
 import com.skcraft.launcher.bootstrap.Downloader;
