@@ -24,7 +24,6 @@ import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -36,6 +35,9 @@ import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
@@ -76,6 +78,8 @@ public class LoginDialog extends JDialog {
     private final Launcher launcher;
     @Getter private final AccountList accounts;
     @Getter private Session session;
+    
+    private static Logger logger = LogManager.getLogger(LoginDialog.class);
 
     private final JComboBox idCombo = new JComboBox();
     private final JPasswordField passwordText = new JPasswordField();
@@ -451,7 +455,8 @@ public class LoginDialog extends JDialog {
 		@Override
 		public SaferizeToken call() throws Exception {
 			Properties prop = launcher.getProperties();
-			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(prop.getProperty("saferizeUrl")), new URI(prop.getProperty("saferizeWebsocketUrl")), prop.getProperty("saferizeAccessKey"), prop.getProperty("saferizePrivateKey")); 
+			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(prop.getProperty("saferizeUrl")), new URI(prop.getProperty("saferizeWebsocketUrl")), prop.getProperty("saferizeAccessKey"), prop.getProperty("saferizePrivateKey"));
+			logger.info("Saferize URL:" + saferizeConfig.getUrl());
 			SaferizeClient saferizeClient = new SaferizeClient(saferizeConfig);
 			Approval approval = saferizeClient.signUp(parentEmail, userToken);
 			if (approval.getStatus() == Status.REJECTED) {
