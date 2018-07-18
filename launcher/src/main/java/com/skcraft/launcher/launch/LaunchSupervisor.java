@@ -145,8 +145,7 @@ public class LaunchSupervisor {
         });
 
         // Watch the created process
-        ListenableFuture<?> future = Futures.transform(
-                processFuture, new LaunchProcessHandler(launcher), launcher.getExecutor());
+        ListenableFuture<?> future = Futures.transform(processFuture, new LaunchProcessHandler(launcher), launcher.getExecutor());
         SwingHelper.addErrorDialogCallback(null, future);
 
         // Clean up at the very end
