@@ -111,7 +111,9 @@ public class LauncherFrame extends JFrame {
         launchButton.setForeground(Color.WHITE);
         launchButton.setBackground(new Color(54, 176, 47));  
         launchButton.setContentAreaFilled(false);
+        launchButton.setBorderPainted(false);
         launchButton.setOpaque(true);
+        
         splitPane.setDividerLocation(200);
         splitPane.setDividerSize(4);
         splitPane.setOpaque(false);
