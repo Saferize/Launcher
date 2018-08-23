@@ -7,7 +7,6 @@
 package com.skcraft.launcher.dialog;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -32,18 +31,11 @@ import javax.swing.WindowConstants;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.saferize.sdk.Approval;
-import com.saferize.sdk.Approval.Status;
 import com.saferize.sdk.SaferizeClient;
 import com.skcraft.concurrency.ObservableFuture;
 import com.skcraft.concurrency.ProgressObservable;
 import com.skcraft.launcher.Launcher;
 import com.skcraft.launcher.auth.AccountList;
-import com.skcraft.launcher.auth.AuthenticationException;
-import com.skcraft.launcher.auth.OfflineSession;
-import com.skcraft.launcher.auth.SaferizeToken;
-import com.skcraft.launcher.auth.Session;
-import com.skcraft.launcher.persistence.Persistence;
 import com.skcraft.launcher.swing.FormPanel;
 import com.skcraft.launcher.swing.LinedBoxPanel;
 import com.skcraft.launcher.swing.SwingHelper;
@@ -60,7 +52,7 @@ public class SaferizeDialog extends JDialog {
 
     private final Launcher launcher;
     @Getter private final AccountList accounts;
-    @Getter private SaferizeToken token = null;
+    @Getter private String parentEmail = null;
     
 
     private final JTextField idParentEmail = new JTextField();
@@ -181,21 +173,30 @@ public class SaferizeDialog extends JDialog {
 
 
 
-    @SuppressWarnings("deprecation")
     private void prepareLogin() {
-         attemptSaferize(idParentEmail.getText(), "test");
+    	String email = idParentEmail.getText();
+    	if (email == null || email.isEmpty()) {
+    		SwingHelper.showErrorDialog(this, "Email cannot be blank", "Email Error");
+    		return;
+    	} 
+    	
+ 		if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[0-9a-zA-Z]+$")) {
+    		SwingHelper.showErrorDialog(this, "Email is invalid", "Email Error");
+    		return;
+		}    	 
+         attemptSaferize(idParentEmail.getText());
     }
 
     
-    private void attemptSaferize(String parentEmail, String userToken) {
+    private void attemptSaferize(String parentEmail) {
     	
-        SaferizeCallable callable = new SaferizeCallable(parentEmail, userToken);        
+        SaferizeCallable callable = new SaferizeCallable(parentEmail);        
         
-        ObservableFuture<SaferizeToken> future = new ObservableFuture<SaferizeToken>(launcher.getExecutor().submit(callable), callable);
+        ObservableFuture<String> future = new ObservableFuture<String>(launcher.getExecutor().submit(callable), callable);
         
-        Futures.addCallback(future, new FutureCallback<SaferizeToken>() {
+        Futures.addCallback(future, new FutureCallback<String>() {
             @Override
-            public void onSuccess(SaferizeToken result) {            	
+            public void onSuccess(String result) {            	
                setResult(result);            	
             }
 
@@ -207,27 +208,26 @@ public class SaferizeDialog extends JDialog {
         SwingHelper.addErrorDialogCallback(this, future);
     }
 
-    private void setResult(SaferizeToken token) {
-        this.token = token;
+    private void setResult(String parentEmail) {
+    	this.parentEmail = parentEmail;
         dispose();
     }
 
-    public static SaferizeToken showLoginRequest(Window owner, Launcher launcher) {
+    public static String showLoginRequest(Window owner, Launcher launcher) {
         SaferizeDialog dialog = new SaferizeDialog(owner, launcher);
         dialog.setVisible(true);
-        return dialog.token;
+        return dialog.getParentEmail();
     }
 
 
     
-    private class SaferizeCallable implements Callable<SaferizeToken>,ProgressObservable {
+    private class SaferizeCallable implements Callable<String>,ProgressObservable {
 
     	private String parentEmail;
-    	private String userToken;
     	
-    	public SaferizeCallable(String parentEmail, String userToken) {
+    	public SaferizeCallable(String parentEmail) {
 			this.parentEmail = parentEmail;
-			this.userToken = userToken;
+			
 		}
     	
 		@Override
@@ -241,19 +241,12 @@ public class SaferizeDialog extends JDialog {
 		}
 
 		@Override
-		public SaferizeToken call() throws Exception {
+		public String call() throws Exception {
 			Properties prop = launcher.getProperties();
 			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(prop.getProperty("saferizeUrl")), new URI(prop.getProperty("saferizeWebsocketUrl")), prop.getProperty("saferizeAccessKey"), prop.getProperty("saferizePrivateKey"));
 			SaferizeClient saferizeClient = new SaferizeClient(saferizeConfig);
-			Approval approval = saferizeClient.signUp(parentEmail, userToken);
-			if (approval.getStatus() == Status.REJECTED) {
-				throw new AuthenticationException("Parental Control is Rejected", SharedLocale.tr("login.parentalControlRejectedError"));
-			}
-			SaferizeToken token = launcher.getSaferizeToken();
-			token.setParentEmail(parentEmail);
-			token.setUserToken(userToken);
-			Persistence.commitAndForget(token);
-			return token;
+			saferizeClient.createProspect(parentEmail);
+			return parentEmail;
 		}
     	
     }

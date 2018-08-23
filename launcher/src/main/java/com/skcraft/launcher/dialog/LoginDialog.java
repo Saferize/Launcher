@@ -20,8 +20,10 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import javax.swing.BorderFactory;
@@ -40,6 +42,9 @@ import javax.swing.WindowConstants;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.saferize.sdk.Approval;
+import com.saferize.sdk.Approval.Status;
+import com.saferize.sdk.SaferizeClient;
 import com.skcraft.concurrency.ObservableFuture;
 import com.skcraft.concurrency.ProgressObservable;
 import com.skcraft.launcher.Configuration;
@@ -49,6 +54,7 @@ import com.skcraft.launcher.auth.AccountList;
 import com.skcraft.launcher.auth.AuthenticationException;
 import com.skcraft.launcher.auth.LoginService;
 import com.skcraft.launcher.auth.OfflineSession;
+import com.skcraft.launcher.auth.SaferizeToken;
 import com.skcraft.launcher.auth.Session;
 import com.skcraft.launcher.persistence.Persistence;
 import com.skcraft.launcher.swing.ActionListeners;
@@ -63,6 +69,7 @@ import com.skcraft.launcher.util.SwingExecutor;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * The login dialog.
@@ -72,6 +79,7 @@ public class LoginDialog extends JDialog {
     private final Launcher launcher;
     @Getter private final AccountList accounts;
     @Getter private Session session;
+    @Getter @Setter private String parentEmail;
     
 
     private final JComboBox idCombo = new JComboBox();
@@ -342,14 +350,15 @@ public class LoginDialog extends JDialog {
 
                 Persistence.commitAndForget(accounts);
 
-                attemptLogin( account, password);
+                attemptLogin(this.parentEmail, account, password);
+                //attemptSaferize(parentEmail, "test", new OfflineSession(launcher.getProperties().getProperty("offlinePlayerName")));
             }
         } else {
             SwingHelper.showErrorDialog(this, SharedLocale.tr("login.noLoginError"), SharedLocale.tr("login.noLoginTitle"));
         }
     }
 
-    private void attemptLogin( Account account, String password) {
+    private void attemptLogin(String parentEmail, Account account, String password) {
         LoginCallable callable = new LoginCallable(account, password);        
         
         ObservableFuture<Session> future = new ObservableFuture<Session>(launcher.getExecutor().submit(callable), callable);
@@ -357,7 +366,8 @@ public class LoginDialog extends JDialog {
         Futures.addCallback(future, new FutureCallback<Session>() {
             @Override
             public void onSuccess(Session result) {            	
-                setResult(result);
+               // setResult(result);
+            	attemptSaferize(parentEmail, result.getUuid(), result);
             }
 
             @Override
@@ -369,6 +379,25 @@ public class LoginDialog extends JDialog {
         SwingHelper.addErrorDialogCallback(this, future);
     }
     
+    private void attemptSaferize(String parentEmail, String userToken, Session session) {
+    	
+        SaferizeCallable callable = new SaferizeCallable(parentEmail, userToken);        
+        
+        ObservableFuture<SaferizeToken> future = new ObservableFuture<SaferizeToken>(launcher.getExecutor().submit(callable), callable);
+        
+        Futures.addCallback(future, new FutureCallback<SaferizeToken>() {
+            @Override
+            public void onSuccess(SaferizeToken result) {            	
+               setResult(session);            	
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        }, SwingExecutor.INSTANCE);        
+        ProgressDialog.showProgress(this, future, SharedLocale.tr("login.saferizeCreating"), SharedLocale.tr("login.saferizeCreatingStatus"));
+        SwingHelper.addErrorDialogCallback(this, future);
+    }
 
     private void setResult(Session session) {
         this.session = session;
@@ -379,11 +408,12 @@ public class LoginDialog extends JDialog {
     public static Session showLoginRequest(Window owner, Launcher launcher) {
     	SaferizeDialog saferizeDialog = new SaferizeDialog(owner, launcher);
     	saferizeDialog.setVisible(true);
-    	if (saferizeDialog.getToken() == null) {
+    	if (saferizeDialog.getParentEmail() == null) {
     		return null;
     	}
     	
         LoginDialog dialog = new LoginDialog(owner, launcher);
+        dialog.setParentEmail(saferizeDialog.getParentEmail());
         dialog.setVisible(true);
         return dialog.getSession();
     }
@@ -429,6 +459,43 @@ public class LoginDialog extends JDialog {
             return SharedLocale.tr("login.loggingInStatus");
         }
     }
-       	   
+    
+    private class SaferizeCallable implements Callable<SaferizeToken>,ProgressObservable {
+
+    	private String parentEmail;
+    	private String userToken;
+    	
+    	public SaferizeCallable(String parentEmail, String userToken) {
+			this.parentEmail = parentEmail;
+			this.userToken = userToken;
+		}
+    	
+		@Override
+		public double getProgress() {
+			return -1;
+		}
+
+		@Override
+		public String getStatus() {
+			return SharedLocale.tr("login.loggingInStatus");
+		}
+
+		@Override
+		public SaferizeToken call() throws Exception {
+			Properties prop = launcher.getProperties();
+			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(prop.getProperty("saferizeUrl")), new URI(prop.getProperty("saferizeWebsocketUrl")), prop.getProperty("saferizeAccessKey"), prop.getProperty("saferizePrivateKey"));
+			SaferizeClient saferizeClient = new SaferizeClient(saferizeConfig);
+			Approval approval = saferizeClient.signUp(parentEmail, userToken);
+			if (approval.getStatus() == Status.REJECTED) {
+				throw new AuthenticationException("Parental Control is Rejected", SharedLocale.tr("login.parentalControlRejectedError"));
+			}
+			SaferizeToken token = launcher.getSaferizeToken();
+			token.setParentEmail(parentEmail);
+			token.setUserToken(userToken);
+			Persistence.commitAndForget(token);
+			return token;
+		}
+    	
+    }
 
 }
