@@ -60,7 +60,7 @@ public class SaferizeDialog extends JDialog {
 
     private final Launcher launcher;
     @Getter private final AccountList accounts;
-    @Getter private Session session;
+    @Getter private SaferizeToken token = null;
     
 
     private final JTextField idParentEmail = new JTextField();
@@ -69,6 +69,7 @@ public class SaferizeDialog extends JDialog {
     private final FormPanel formPanel = new FormPanel();
     private final JPanel outerPanel = new JPanel();
     private final LinedBoxPanel buttonsPanel = new LinedBoxPanel(true);
+
 
     
 
@@ -182,11 +183,11 @@ public class SaferizeDialog extends JDialog {
 
     @SuppressWarnings("deprecation")
     private void prepareLogin() {
-         attemptSaferize(idParentEmail.getText(), "test", new OfflineSession(launcher.getProperties().getProperty("offlinePlayerName")));
+         attemptSaferize(idParentEmail.getText(), "test");
     }
 
     
-    private void attemptSaferize(String parentEmail, String userToken, Session session) {
+    private void attemptSaferize(String parentEmail, String userToken) {
     	
         SaferizeCallable callable = new SaferizeCallable(parentEmail, userToken);        
         
@@ -195,7 +196,7 @@ public class SaferizeDialog extends JDialog {
         Futures.addCallback(future, new FutureCallback<SaferizeToken>() {
             @Override
             public void onSuccess(SaferizeToken result) {            	
-               setResult(session);            	
+               setResult(result);            	
             }
 
             @Override
@@ -206,15 +207,15 @@ public class SaferizeDialog extends JDialog {
         SwingHelper.addErrorDialogCallback(this, future);
     }
 
-    private void setResult(Session session) {
-        this.session = session;
+    private void setResult(SaferizeToken token) {
+        this.token = token;
         dispose();
     }
 
-    public static Session showLoginRequest(Window owner, Launcher launcher) {
+    public static SaferizeToken showLoginRequest(Window owner, Launcher launcher) {
         SaferizeDialog dialog = new SaferizeDialog(owner, launcher);
         dialog.setVisible(true);
-        return dialog.getSession();
+        return dialog.token;
     }
 
 

@@ -379,6 +379,9 @@ public class LoginDialog extends JDialog {
     public static Session showLoginRequest(Window owner, Launcher launcher) {
     	SaferizeDialog saferizeDialog = new SaferizeDialog(owner, launcher);
     	saferizeDialog.setVisible(true);
+    	if (saferizeDialog.getToken() == null) {
+    		return null;
+    	}
     	
         LoginDialog dialog = new LoginDialog(owner, launcher);
         dialog.setVisible(true);
