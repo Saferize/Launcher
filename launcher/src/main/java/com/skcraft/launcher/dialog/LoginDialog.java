@@ -10,6 +10,9 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,10 +20,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import javax.swing.BorderFactory;
@@ -31,20 +32,14 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
-import javax.swing.JTextField;
 import javax.swing.WindowConstants;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.saferize.sdk.Approval;
-import com.saferize.sdk.Approval.Status;
-import com.saferize.sdk.SaferizeClient;
 import com.skcraft.concurrency.ObservableFuture;
 import com.skcraft.concurrency.ProgressObservable;
 import com.skcraft.launcher.Configuration;
@@ -54,7 +49,6 @@ import com.skcraft.launcher.auth.AccountList;
 import com.skcraft.launcher.auth.AuthenticationException;
 import com.skcraft.launcher.auth.LoginService;
 import com.skcraft.launcher.auth.OfflineSession;
-import com.skcraft.launcher.auth.SaferizeToken;
 import com.skcraft.launcher.auth.Session;
 import com.skcraft.launcher.persistence.Persistence;
 import com.skcraft.launcher.swing.ActionListeners;
@@ -79,19 +73,19 @@ public class LoginDialog extends JDialog {
     @Getter private final AccountList accounts;
     @Getter private Session session;
     
-    private static Logger logger = LogManager.getLogger(LoginDialog.class);
 
     private final JComboBox idCombo = new JComboBox();
     private final JPasswordField passwordText = new JPasswordField();
-    private final JTextField idParentEmail = new JTextField();
     private final JCheckBox rememberIdCheck = new JCheckBox(SharedLocale.tr("login.rememberId"));
     private final JCheckBox rememberPassCheck = new JCheckBox(SharedLocale.tr("login.rememberPassword"));
     private final JButton loginButton = new JButton(SharedLocale.tr("login.login"));
     private final LinkButton recoverButton = new LinkButton(SharedLocale.tr("login.recoverAccount"));
+    private final LinkButton createAccountButton = new LinkButton(SharedLocale.tr("login.createAccount"));
     private final JButton offlineButton = new JButton(SharedLocale.tr("login.playOffline"));
     private final JButton cancelButton = new JButton(SharedLocale.tr("button.cancel"));
     private final FormPanel formPanel = new FormPanel();
     private final LinedBoxPanel buttonsPanel = new LinedBoxPanel(true);
+    private final JPanel outerPanel = new JPanel();
 
     /**
      * Create a new login dialog.
@@ -141,31 +135,47 @@ public class LoginDialog extends JDialog {
 
         loginButton.setFont(loginButton.getFont().deriveFont(Font.BOLD));
 
-        formPanel.addRow(new JLabel(SharedLocale.tr("login.parentEmail")), idParentEmail);
-        if (launcher.getSaferizeToken() != null && launcher.getSaferizeToken().getParentEmail() != null) {
-        	idParentEmail.setText(launcher.getSaferizeToken().getParentEmail());
-        	if (launcher.getSaferizeToken().getUserToken() != null) {
-        		idParentEmail.setEnabled(false);
-        	}
-        }
         
         formPanel.addRow(new JLabel(SharedLocale.tr("login.idEmail")), idCombo);
         formPanel.addRow(new JLabel(SharedLocale.tr("login.password")), passwordText);
+        formPanel.addRow(recoverButton);
         formPanel.addRow(new JLabel(), rememberIdCheck);
         formPanel.addRow(new JLabel(), rememberPassCheck);
         
         buttonsPanel.setBorder(BorderFactory.createEmptyBorder(26, 13, 13, 13));
 
-//        if (launcher.getConfig().isOfflineEnabled()) {
-//            buttonsPanel.addElement(offlineButton);
-//            buttonsPanel.addElement(Box.createHorizontalStrut(2));
-//        }
-        buttonsPanel.addElement(recoverButton);
+        //buttonsPanel.addElement(recoverButton);
+        buttonsPanel.addElement(createAccountButton);
         buttonsPanel.addGlue();
         buttonsPanel.addElement(loginButton);
         buttonsPanel.addElement(cancelButton);
-
-        add(formPanel, BorderLayout.CENTER);
+        
+        
+        outerPanel.setLayout(new GridBagLayout());
+        
+        JLabel stepsLabel = new JLabel("Step 2 of 2");
+        stepsLabel.setFont(stepsLabel.getFont().deriveFont(Font.BOLD));       
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(10, 2, 10, 2);        
+        outerPanel.add(stepsLabel, c);
+        
+        JLabel loginWithMinecraftLabel = new JLabel("Login with your Minecraft/Mojang Account");
+        loginWithMinecraftLabel.setFont(loginWithMinecraftLabel.getFont().deriveFont(Font.BOLD));
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 1;
+        c.anchor = GridBagConstraints.WEST;
+        c.insets = new Insets(10, 12, 10, 2);
+        
+        outerPanel.add(loginWithMinecraftLabel, c);
+        
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 2;
+        c.weightx = 1.0;
+        c.fill = GridBagConstraints.HORIZONTAL;        
+        outerPanel.add(formPanel, c);      
+        add(outerPanel, BorderLayout.CENTER);
         add(buttonsPanel, BorderLayout.SOUTH);
 
         getRootPane().setDefaultButton(loginButton);
@@ -188,6 +198,10 @@ public class LoginDialog extends JDialog {
 
         recoverButton.addActionListener(
                 ActionListeners.openURL(recoverButton, launcher.getProperties().getProperty("resetPasswordUrl")));
+
+        createAccountButton.addActionListener(
+                ActionListeners.openURL(recoverButton, launcher.getProperties().getProperty("createAccountUrl")));
+        
 
         loginButton.addActionListener(new ActionListener() {
             @Override
@@ -308,7 +322,6 @@ public class LoginDialog extends JDialog {
         if (selected != null && selected instanceof Account) {
             Account account = (Account) selected;
             String password = passwordText.getText();
-            String parentEmail = idParentEmail.getText();
 
             if (password == null || password.isEmpty()) {
                 SwingHelper.showErrorDialog(this, SharedLocale.tr("login.noPasswordError"), SharedLocale.tr("login.noPasswordTitle"));
@@ -329,15 +342,14 @@ public class LoginDialog extends JDialog {
 
                 Persistence.commitAndForget(accounts);
 
-                attemptLogin(parentEmail, account, password);
-                //attemptSaferize(parentEmail, "test", new OfflineSession(launcher.getProperties().getProperty("offlinePlayerName")));
+                attemptLogin( account, password);
             }
         } else {
             SwingHelper.showErrorDialog(this, SharedLocale.tr("login.noLoginError"), SharedLocale.tr("login.noLoginTitle"));
         }
     }
 
-    private void attemptLogin(String parentEmail, Account account, String password) {
+    private void attemptLogin( Account account, String password) {
         LoginCallable callable = new LoginCallable(account, password);        
         
         ObservableFuture<Session> future = new ObservableFuture<Session>(launcher.getExecutor().submit(callable), callable);
@@ -345,8 +357,7 @@ public class LoginDialog extends JDialog {
         Futures.addCallback(future, new FutureCallback<Session>() {
             @Override
             public void onSuccess(Session result) {            	
-               // setResult(result);
-            	attemptSaferize(parentEmail, result.getUuid(), result);
+                setResult(result);
             }
 
             @Override
@@ -358,25 +369,6 @@ public class LoginDialog extends JDialog {
         SwingHelper.addErrorDialogCallback(this, future);
     }
     
-    private void attemptSaferize(String parentEmail, String userToken, Session session) {
-    	
-        SaferizeCallable callable = new SaferizeCallable(parentEmail, userToken);        
-        
-        ObservableFuture<SaferizeToken> future = new ObservableFuture<SaferizeToken>(launcher.getExecutor().submit(callable), callable);
-        
-        Futures.addCallback(future, new FutureCallback<SaferizeToken>() {
-            @Override
-            public void onSuccess(SaferizeToken result) {            	
-               setResult(session);            	
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        }, SwingExecutor.INSTANCE);        
-        ProgressDialog.showProgress(this, future, SharedLocale.tr("login.saferizeCreating"), SharedLocale.tr("login.saferizeCreatingStatus"));
-        SwingHelper.addErrorDialogCallback(this, future);
-    }
 
     private void setResult(Session session) {
         this.session = session;
@@ -385,6 +377,9 @@ public class LoginDialog extends JDialog {
     }
 
     public static Session showLoginRequest(Window owner, Launcher launcher) {
+    	SaferizeDialog saferizeDialog = new SaferizeDialog(owner, launcher);
+    	saferizeDialog.setVisible(true);
+    	
         LoginDialog dialog = new LoginDialog(owner, launcher);
         dialog.setVisible(true);
         return dialog.getSession();
@@ -431,44 +426,6 @@ public class LoginDialog extends JDialog {
             return SharedLocale.tr("login.loggingInStatus");
         }
     }
-    
-    private class SaferizeCallable implements Callable<SaferizeToken>,ProgressObservable {
-
-    	private String parentEmail;
-    	private String userToken;
-    	
-    	public SaferizeCallable(String parentEmail, String userToken) {
-			this.parentEmail = parentEmail;
-			this.userToken = userToken;
-		}
-    	
-		@Override
-		public double getProgress() {
-			return -1;
-		}
-
-		@Override
-		public String getStatus() {
-			return SharedLocale.tr("login.loggingInStatus");
-		}
-
-		@Override
-		public SaferizeToken call() throws Exception {
-			Properties prop = launcher.getProperties();
-			com.saferize.sdk.Configuration saferizeConfig = new com.saferize.sdk.Configuration(new URI(prop.getProperty("saferizeUrl")), new URI(prop.getProperty("saferizeWebsocketUrl")), prop.getProperty("saferizeAccessKey"), prop.getProperty("saferizePrivateKey"));
-			logger.info("Saferize URL:" + saferizeConfig.getUrl());
-			SaferizeClient saferizeClient = new SaferizeClient(saferizeConfig);
-			Approval approval = saferizeClient.signUp(parentEmail, userToken);
-			if (approval.getStatus() == Status.REJECTED) {
-				throw new AuthenticationException("Parental Control is Rejected", SharedLocale.tr("login.parentalControlRejectedError"));
-			}
-			SaferizeToken token = launcher.getSaferizeToken();
-			token.setParentEmail(parentEmail);
-			token.setUserToken(userToken);
-			Persistence.commitAndForget(token);
-			return token;
-		}
-    	
-    }
+       	   
 
 }

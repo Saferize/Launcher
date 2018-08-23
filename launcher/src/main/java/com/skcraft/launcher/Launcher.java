@@ -8,6 +8,8 @@ package com.skcraft.launcher;
 
 import static com.skcraft.launcher.util.SharedLocale.*;
 
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.File;
 import java.io.FileFilter;
@@ -36,7 +38,6 @@ import com.skcraft.launcher.auth.AccountList;
 import com.skcraft.launcher.auth.LoginService;
 import com.skcraft.launcher.auth.SaferizeToken;
 import com.skcraft.launcher.auth.YggdrasilLoginService;
-import com.skcraft.launcher.launch.LaunchOptions;
 import com.skcraft.launcher.launch.LaunchSupervisor;
 import com.skcraft.launcher.model.minecraft.VersionManifest;
 import com.skcraft.launcher.persistence.Persistence;
@@ -94,7 +95,9 @@ public final class Launcher {
      */
     public Launcher(@NonNull File baseDir, @NonNull File configDir, LauncherArguments arguments) throws IOException {
         SharedLocale.loadBundle("com.skcraft.launcher.lang.Launcher", Locale.getDefault());
+        
 
+        
         this.baseDir = baseDir;
         this.properties = LauncherUtils.loadProperties(Launcher.class, "launcher.properties", "com.skcraft.launcher.propertiesFile");
         this.instances = new InstanceList(this);
