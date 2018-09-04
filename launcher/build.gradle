@@ -21,7 +21,7 @@ dependencies {
     compile 'com.miglayout:miglayout:3.7.4'
     compile 'com.google.code.findbugs:jsr305:3.0.0'
     compile 'org.java.net.substance:substance:6.0'
-    compile 'com.saferize:saferize-java-sdk:0.0.1'
+    compile 'com.saferize:saferize-java-sdk:0.0.+'
     
 }
 
