@@ -431,7 +431,7 @@ public class LoginDialog extends JDialog {
         public Session call() throws AuthenticationException, IOException, InterruptedException {
             LoginService service = launcher.getLoginService();
             List<? extends Session> identities = service.login(launcher.getProperties().getProperty("agentName"), account.getId(), password);
-
+            
             // The list of identities (profiles in Mojang terms) corresponds to whether the account
             // owns the game, so we need to check that
             if (identities.size() > 0) {
